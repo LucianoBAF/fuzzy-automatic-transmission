@@ -19,6 +19,8 @@ namespace fuzzy_transmission
 
     public partial class Form1 : Form
     {
+
+        #region Global vars declaration
         public const int locationX = 70;
         public const int locationY = 30;
         public const int locationIncrementX = 50;
@@ -29,15 +31,6 @@ namespace fuzzy_transmission
         public static extern int SetForegroundWindow(IntPtr hWnd);
 
         Process p = null;
-
-        const UInt32 WM_KEYDOWN = 0x0100;
-        const int VK_F5 = 0x74;
-        const int VK_1 = 0x31;
-        const int VK_2 = 0x32;
-        const int VK_3 = 0x33;
-        const int VK_4 = 0x34;
-        const int VK_5 = 0x35;
-
 
         Button connectAssettoButton = new Button();
         Button manualControlButton = new Button();
@@ -55,8 +48,7 @@ namespace fuzzy_transmission
         TrackBar trackBar4 = new TrackBar();
         TrackBar trackBar5 = new TrackBar();
 
-        Label label1 = new Label();
-
+        Label labelOutput = new Label();
         
 
         List<float[]> rules = new List<float[]>();
@@ -118,6 +110,7 @@ namespace fuzzy_transmission
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 
         float speed, throttle_pos, brake, steering_wheel_pos, gear;
+        #endregion
 
         public Form1()
         {
@@ -383,9 +376,8 @@ namespace fuzzy_transmission
             ac = new AssettoCorsa();
 
             timer.Interval = 100;
-            timer.Tick += new EventHandler(SetTrackbarValue);
+            timer.Tick += new EventHandler(setTrackbarValue);
             timer.Start();
-
         }
 
         private void initializeFormAndObjects()
@@ -463,8 +455,8 @@ namespace fuzzy_transmission
             label_trackbar4.Width = 300;
             label_trackbar5.Width = 300;
 
-            label1.Location = new Point(locationX, locationY + locationIncrementY * 7);
-            label1.Text = "Output: ";
+            labelOutput.Location = new Point(locationX, locationY + locationIncrementY * 7);
+            labelOutput.Text = "Output: ";
 
             //
             //Form1
@@ -481,42 +473,45 @@ namespace fuzzy_transmission
             this.Controls.Add(label_trackbar4);
             this.Controls.Add(label_trackbar5);
             this.Controls.Add(connectAssettoButton);
-            this.Controls.Add(label1);
+            this.Controls.Add(manualControlButton);
+            this.Controls.Add(labelOutput);
 
             this.MaximumSize = this.MinimumSize = this.Size;
-        } 
-
-        
-
-        void label_trackbar1_TextChanged(Object sender, EventArgs e) {
-            label_trackbar1.Text = "Speed" + trackBar1.Value.ToString();
-            calculateOutput();
         }
 
-        void label_trackbar2_TextChanged(Object sender, EventArgs e)
+        private void initializeAssettoButtonClicked(object sender, EventArgs e)
         {
-            label_trackbar2.Text = "Throttle position" + trackBar2.Value.ToString();
-            calculateOutput();
-        }
+            p = Process.GetProcessesByName("acs").FirstOrDefault();
+            //SetForegroundWindow(p.MainWindowHandle);
 
-        void label_trackbar3_TextChanged(Object sender, EventArgs e)
-        {
-            label_trackbar3.Text = "Brake" + trackBar3.Value.ToString();
-            calculateOutput();
-        }
+            if(ac.IsRunning) {
+                ac.Stop();
+                if(!ac.IsRunning)
+                    MessageBox.Show("Assetto Corsa connection failed to stop");
+                else {
+                    ac.StaticInfoUpdated -= ac_StaticInfoUpdated;
+                    ac.PhysicsUpdated -= ac_PhysicsUpdated;
+                    MessageBox.Show("Assetto Corsa connection stopped successfully");
+                }
+            }
+            else {
+                //ac.StaticInfoInterval = 5000; // Get StaticInfo updates ever 5 seconds
+                //ac.StaticInfoUpdated += ac_StaticInfoUpdated; // Add event listener for StaticInfo
 
-        void label_trackbar4_TextChanged(Object sender, EventArgs e)
-        {
-            label_trackbar4.Text = "Steering Wheel" + trackBar4.Value.ToString();
-            calculateOutput();
-        }
+                ac.PhysicsInterval = 100;
+                ac.PhysicsUpdated += ac_PhysicsUpdated;
 
-        void label_trackbar5_TextChanged(Object sender, EventArgs e)
-        {
-            label_trackbar5.Text = "Throttle variation" + trackBar5.Value.ToString();
-            calculateOutput();
-        }
+                ac.Start(); // Connect to shared memory and start interval timers 
+                ac.Start();
 
+                //Console.ReadKey();
+
+                if(ac.IsRunning)
+                    MessageBox.Show("Assetto Corsa connection was successful!");
+                else
+                    MessageBox.Show("Assetto Corsa connection failed");
+            }
+        }
 
 
 
@@ -556,7 +551,7 @@ namespace fuzzy_transmission
             finalOutput = applyRulesToOutput();
 
             //MessageBox.Show(finalOutput.ToString());
-            label1.Text = "Output: " + finalOutput.ToString();
+            labelOutput.Text = "Output: " + finalOutput.ToString();
         }
 
         private void calculateOutputDirect(float speed, float throttlePos, float breakPos, float steeringWheelAngle, float throttleVariation) {
@@ -624,7 +619,6 @@ namespace fuzzy_transmission
             }
         }
 
-        /* Trapezpoidal membership function */
         static float applyInputToTrapezoid(float x, float[] parameters)
         {
             float a = parameters[0], b = parameters[1], c = parameters[2], d = parameters[3];
@@ -679,7 +673,6 @@ namespace fuzzy_transmission
             return (Math.Min(y1, y2));
         }
 
-
         private float applyRulesToOutput()
         {
             //For each rule must find the minimum pertinence between the inputs involved 
@@ -711,8 +704,6 @@ namespace fuzzy_transmission
 
             return defuzzyfication(listMFsAfterInputs);
         }
-
-
 
         private float defuzzyfication(List<MembershipFunction> listMFsAfterInputs)
         {
@@ -771,42 +762,6 @@ namespace fuzzy_transmission
         */
         
 
-        private void initializeAssettoButtonClicked(object sender, EventArgs e)
-        {
-            p = Process.GetProcessesByName("acs").FirstOrDefault();
-            //SetForegroundWindow(p.MainWindowHandle);
-
-            if(ac.IsRunning) {
-                ac.Stop();
-                if(!ac.IsRunning) 
-                    MessageBox.Show("Assetto Corsa connection failed to stop");
-                else {
-                    ac.StaticInfoUpdated -= ac_StaticInfoUpdated;
-                    ac.PhysicsUpdated -= ac_PhysicsUpdated;
-                    MessageBox.Show("Assetto Corsa connection stopped successfully");
-                }
-            }
-            else {
-                //ac.StaticInfoInterval = 5000; // Get StaticInfo updates ever 5 seconds
-                //ac.StaticInfoUpdated += ac_StaticInfoUpdated; // Add event listener for StaticInfo
-
-                ac.PhysicsInterval = 100;
-                ac.PhysicsUpdated += ac_PhysicsUpdated;
-
-                ac.Start(); // Connect to shared memory and start interval timers 
-                ac.Start();
-
-                //Console.ReadKey();
-
-                if(ac.IsRunning)
-                    MessageBox.Show("Assetto Corsa connection was successful!");
-                else
-                    MessageBox.Show("Assetto Corsa connection failed");
-            }
-        }
-
-        
-
         private void ac_StaticInfoUpdated(object sender, StaticInfoEventArgs e)
         {
             // Print out some data from StaticInfo
@@ -848,29 +803,53 @@ namespace fuzzy_transmission
 
 
 
-
-        public void SetTrackbarValue(object sender, System.EventArgs e)
+        #region Trackbars events
+        public void setTrackbarValue(object sender, System.EventArgs e)
         {
-            // InvokeRequired required compares the thread ID of the
-            // calling thread to the thread ID of the creating thread.
-            // If these threads are different, it returns true.
-            
-                trackBar1.Value = (int)speed;
-                trackBar2.Value = (int)throttle_pos;
-                trackBar3.Value = (int)brake;
-                trackBar4.Value = (int) ( (Math.Abs(steering_wheel_pos)));
+            trackBar1.Value = (int) speed;
+            trackBar2.Value = (int) throttle_pos;
+            trackBar3.Value = (int) brake;
+            trackBar4.Value = (int) ((Math.Abs(steering_wheel_pos)));
 
+            label_trackbar1.Text = "Speed " + speed.ToString();
+            label_trackbar2.Text = "Throttle position " + throttle_pos.ToString();
+            label_trackbar3.Text = "Brake " + brake.ToString();
+            label_trackbar4.Text = "Steering Wheel " + steering_wheel_pos.ToString();
 
-
-                label_trackbar1.Text = "Speed " + speed.ToString();
-                label_trackbar2.Text = "Throttle position " + throttle_pos.ToString();
-                label_trackbar3.Text = "Brake " + brake.ToString();
-                label_trackbar4.Text = "Steering Wheel " + steering_wheel_pos.ToString();
-
-                label1.Text = "Output: " + finalOutput;
+            labelOutput.Text = "Output: " + finalOutput;
         }
 
 
+        void label_trackbar1_TextChanged(Object sender, EventArgs e)
+        {
+            label_trackbar1.Text = "Speed" + trackBar1.Value.ToString();
+            calculateOutput();
+        }
+
+        void label_trackbar2_TextChanged(Object sender, EventArgs e)
+        {
+            label_trackbar2.Text = "Throttle position" + trackBar2.Value.ToString();
+            calculateOutput();
+        }
+
+        void label_trackbar3_TextChanged(Object sender, EventArgs e)
+        {
+            label_trackbar3.Text = "Brake" + trackBar3.Value.ToString();
+            calculateOutput();
+        }
+
+        void label_trackbar4_TextChanged(Object sender, EventArgs e)
+        {
+            label_trackbar4.Text = "Steering Wheel" + trackBar4.Value.ToString();
+            calculateOutput();
+        }
+
+        void label_trackbar5_TextChanged(Object sender, EventArgs e)
+        {
+            label_trackbar5.Text = "Throttle variation" + trackBar5.Value.ToString();
+            calculateOutput();
+        }
+        #endregion
 
 
         /*
@@ -895,11 +874,6 @@ namespace fuzzy_transmission
             return (sum / total_mf);
         }
         */
-
-
-
-
-
 
         /*
         public double Defuzzify()
