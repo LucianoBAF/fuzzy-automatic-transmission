@@ -19,7 +19,6 @@ namespace fuzzy_transmission
 
     public partial class Form1 : Form
     {
-
         #region Global vars declaration
         public const int locationX = 70;
         public const int locationY = 30;
@@ -29,6 +28,9 @@ namespace fuzzy_transmission
 
         [DllImport("USER32.DLL")]
         public static extern int SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetFocus(IntPtr hWnd);
 
         Process p = null;
 
@@ -109,6 +111,8 @@ namespace fuzzy_transmission
         AssettoCorsa ac = new AssettoCorsa();
 
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        Boolean canChangeGears;
+        int timerCount;
 
         float speed, throttle_pos, brake, steering_wheel_pos, gear;
         #endregion
@@ -127,7 +131,7 @@ namespace fuzzy_transmission
             listOutputPFs.Add(new FuzzyPertinenceFunction("gear"));
             //--------------------------------------------------------------------
 
-            List<MembershipFunction> listInputMFs= new List<MembershipFunction>();
+            List<MembershipFunction> listInputMFs = new List<MembershipFunction>();
 
 
             listInputPFs[0].MembershipFunctions = new List<MembershipFunction> { (new MembershipFunction("VL", new float[] { -40.5f, -4.5f, 4.5f, 40.5f })) };
@@ -342,9 +346,11 @@ namespace fuzzy_transmission
             ac = new AssettoCorsa();
 
             timer.Interval = 100;
-            timer.Tick += new EventHandler(setTrackbarValue);
+            timer.Tick += new EventHandler(updateValuesByTimer);
             timer.Stop(); //start in manual control
-            //timer.Start();
+
+            canChangeGears = true;
+            timerCount = 0;
 
 
             // 
@@ -405,8 +411,9 @@ namespace fuzzy_transmission
             label_trackbar4.Width = 300;
             label_trackbar5.Width = 300;
 
-            labelOutput.Location = new Point(locationX, locationY + locationIncrementY * 7);
+            labelOutput.Location = new Point(locationX - 50, locationY + locationIncrementY * 7);
             labelOutput.Text = "Output: ";
+            labelOutput.Width = 300;
 
             //
             //Form1
@@ -451,7 +458,6 @@ namespace fuzzy_transmission
             }
             else {
                 //Switch to assetto corsa connection
-                timer.Start();
                 trackBar1.ValueChanged -= new System.EventHandler(this.label_trackbar1_TextChanged);
                 trackBar2.ValueChanged -= new System.EventHandler(this.label_trackbar2_TextChanged);
                 trackBar3.ValueChanged -= new System.EventHandler(this.label_trackbar3_TextChanged);
@@ -468,6 +474,10 @@ namespace fuzzy_transmission
                 manualControlButton.BackgroundImage = fuzzy_transmission.Properties.Resources.assetto_icon;
 
                 initializeAssettoConnection();
+                IntPtr h = p.MainWindowHandle;
+                SetFocus(h);
+
+                timer.Start();
             }
         }
 
@@ -506,7 +516,7 @@ namespace fuzzy_transmission
         }
 
         private void calculateOutput() {
-            
+
             FuzzyPertinenceFunction currentPF;
             currentPF = listInputPFs[0];
             calculateMFoutput(currentPF, trackBar1.Value);
@@ -523,11 +533,11 @@ namespace fuzzy_transmission
             finalOutput = applyRulesToOutput();
 
             //MessageBox.Show(finalOutput.ToString());
-            labelOutput.Text = "Output: " + finalOutput.ToString();
+            labelOutput.Text = "Calculated gear: " + finalOutput.ToString();
         }
 
         private void calculateOutputDirect(float speed, float throttlePos, float breakPos, float steeringWheelAngle, float throttleVariation) {
-            
+
             FuzzyPertinenceFunction currentPF;
             currentPF = listInputPFs[0];
             calculateMFoutput(currentPF, speed);
@@ -542,28 +552,9 @@ namespace fuzzy_transmission
 
             finalOutput = applyRulesToOutput();
 
-            finalOutput = (float)Math.Floor((double)(Math.Max(1, finalOutput/10)));
+            finalOutput = (float) Math.Floor((double) (Math.Max(1, finalOutput / 10)));
 
             applyOutputToAssetto();
-        }
-
-        private void applyOutputToAssetto()
-        {
-            if(p != null) {
-                IntPtr h = p.MainWindowHandle;
-                SetForegroundWindow(h);
-
-                int howManyGearsToChange = (int) Math.Abs((int) finalOutput - gear);
-
-                Console.WriteLine("  Gear:   " + gear + " Calculated output: " + finalOutput + " How many gears to change: " + howManyGearsToChange + "\n2");
-
-                for(int i = 0; i < howManyGearsToChange; i++) {
-                    if(finalOutput < gear)
-                        SendKeys.SendWait("2");
-                    else
-                        SendKeys.SendWait("1");
-                }
-            }
         }
 
         private void calculateMFoutput(FuzzyPertinenceFunction currentPF, float input)
@@ -636,7 +627,7 @@ namespace fuzzy_transmission
             FuzzyPertinenceFunction currentPF;
             int i, j;
             float minimumPertinence;
-            
+
             //List to hold the outcome of applying the inputs to the rules
             List<MembershipFunction> listMFsAfterInputs = new List<MembershipFunction>();
 
@@ -649,11 +640,11 @@ namespace fuzzy_transmission
                 for(j = 0; j < currentRule.Length - numberOfOutputs - 1; j++) {
                     currentPF = listInputPFs[j];
                     if(currentRule[j] > -1)
-                        minimumPertinence = Math.Min(minimumPertinence, currentPF.MembershipFunctions[(int)currentRule[j]].MFoutput);     
+                        minimumPertinence = Math.Min(minimumPertinence, currentPF.MembershipFunctions[(int) currentRule[j]].MFoutput);
                 }
 
 
-                listMFsAfterInputs.Add(new MembershipFunction(listOutputPFs[0].getMFslinguisticVariable(((int) currentRule[5])-1), listOutputPFs[0].MembershipFunctions[((int) currentRule[5]) - 1].MFpoints, minimumPertinence));
+                listMFsAfterInputs.Add(new MembershipFunction(listOutputPFs[0].getMFslinguisticVariable(((int) currentRule[5]) - 1), listOutputPFs[0].MembershipFunctions[((int) currentRule[5]) - 1].MFpoints, minimumPertinence));
             }
 
             return defuzzyfication(listMFsAfterInputs);
@@ -685,6 +676,24 @@ namespace fuzzy_transmission
             return numerator / denominator;
         }
 
+        private void applyOutputToAssetto()
+        {
+            if(p != null && canChangeGears) {
+
+                int howManyGearsToChange = (int) (finalOutput - gear);
+                Console.WriteLine("  Gear:   " + gear + " Calculated output: " + finalOutput + " How many gears to change: " + howManyGearsToChange + "\n");
+
+                if(howManyGearsToChange > 0) {
+                    SendKeys.SendWait("1");
+                    canChangeGears = false;
+                }
+                else if(howManyGearsToChange < 0) {
+                    SendKeys.SendWait("2");
+                    canChangeGears = false;
+                }
+            }
+        }
+
         private void ac_StaticInfoUpdated(object sender, StaticInfoEventArgs e)
         {
             // Print out some data from StaticInfo
@@ -698,34 +707,18 @@ namespace fuzzy_transmission
 
         private void ac_PhysicsUpdated(object sender, PhysicsEventArgs e)
         {
-            // Print out some data from StaticInfo
-            /*
-            Console.WriteLine("  PhysicsInfo");
-            Console.WriteLine("  Speed: " + e.Physics.SpeedKmh);
-            Console.WriteLine("  Brake:     " + e.Physics.Brake); //0 to 1
-            Console.WriteLine("  SteerAngle:   " + e.Physics.SteerAngle); //-1 to 1
-            Console.WriteLine("  Gear:   " + e.Physics.Gear);
-            Console.WriteLine("  Gas:   " + e.Physics.Gas); //0 to 1
-            */
-
-            calculateOutputDirect(e.Physics.SpeedKmh, e.Physics.Gas, e.Physics.Brake, 90f*(1f + (e.Physics.SteerAngle)), 0);
-
-            /*
-            SetTrackbarValue(trackBar1, (int) e.Physics.SpeedKmh);
-            SetTrackbarValue(trackBar2, (int) e.Physics.Gas*100);
-            SetTrackbarValue(trackBar3, (int) e.Physics.Brake*100);
-            SetTrackbarValue(trackBar4, (int) (90f * (1f + (e.Physics.SteerAngle))));
-            */
-
             speed = e.Physics.SpeedKmh;
             throttle_pos = e.Physics.Gas * 100f;
-            brake = e.Physics.Brake*100f;
-            steering_wheel_pos = e.Physics.SteerAngle*100f;
-            gear = e.Physics.Gear;
+            brake = e.Physics.Brake * 100f;
+            steering_wheel_pos = e.Physics.SteerAngle * 100f;
+            gear = Math.Min(e.Physics.Gear-1, 5);
+
+
+            calculateOutputDirect(e.Physics.SpeedKmh, e.Physics.Gas, e.Physics.Brake, 90f*(1f + (e.Physics.SteerAngle)), 0);
         }
 
         #region Trackbars events
-        public void setTrackbarValue(object sender, System.EventArgs e)
+        public void updateValuesByTimer(object sender, System.EventArgs e)
         {
             trackBar1.Value = (int) speed;
             trackBar2.Value = (int) throttle_pos;
@@ -737,7 +730,12 @@ namespace fuzzy_transmission
             label_trackbar3.Text = "Brake " + brake.ToString();
             label_trackbar4.Text = "Steering Wheel " + steering_wheel_pos.ToString();
 
-            labelOutput.Text = "Output: " + finalOutput;
+            labelOutput.Text = "Current gear: " + gear + "   Calculated: " + finalOutput.ToString() + "   timercount: " + timerCount;
+                
+            if(++timerCount == 5) {
+                canChangeGears = true;
+                timerCount = 0;
+            }
         }
 
 
