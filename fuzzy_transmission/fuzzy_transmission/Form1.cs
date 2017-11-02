@@ -543,27 +543,27 @@ namespace fuzzy_transmission
             finalOutput = applyRulesToOutput();
 
             finalOutput = (float)Math.Floor((double)(Math.Max(1, finalOutput/10)));
-            
-            
 
+            applyOutputToAssetto();
+        }
+
+        private void applyOutputToAssetto()
+        {
             if(p != null) {
                 IntPtr h = p.MainWindowHandle;
                 SetForegroundWindow(h);
 
-                int howManyGearsToChange = (int)Math.Abs((int)finalOutput - gear);
+                int howManyGearsToChange = (int) Math.Abs((int) finalOutput - gear);
 
                 Console.WriteLine("  Gear:   " + gear + " Calculated output: " + finalOutput + " How many gears to change: " + howManyGearsToChange + "\n2");
 
                 for(int i = 0; i < howManyGearsToChange; i++) {
-                    if(finalOutput < gear) 
+                    if(finalOutput < gear)
                         SendKeys.SendWait("2");
                     else
                         SendKeys.SendWait("1");
                 }
-                
             }
-
-            
         }
 
         private void calculateMFoutput(FuzzyPertinenceFunction currentPF, float input)
