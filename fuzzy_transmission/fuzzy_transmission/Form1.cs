@@ -166,49 +166,6 @@ namespace fuzzy_transmission
             listOutputPFs[0].MembershipFunctions.Add(new MembershipFunction("VH", new float[] { 46f, 46.8f, 50.8f, 59.2f }));
             //--------------------------------------------------------------------
 
-
-            #region Old
-            input1.Add("VL", new float[] { -40.5f, -4.5f, 4.5f, 40.5f });
-            input1.Add("L", new float[] { 4.5f, 40.5f, 49.5f, 85.5f });
-            input1.Add("M", new float[] { 49.5f, 85.5f, 94.5f, 130.5f });
-            input1.Add("H", new float[] { 94.5f, 130.5f, 139.5f, 175.5f });
-            input1.Add("VH", new float[] { 139.5f, 175.5f, 184.5f, 220.5f });
-
-
-            input2.Add("VL", new float[] { -0.225f, -0.025f, 0.025f, 0.225f });
-            input2.Add("L", new float[] { 0.025f, 0.225f, 0.275f, 0.475f });
-            input2.Add("M", new float[] { 0.275f, 0.475f, 0.525f, 0.725f });
-            input2.Add("H", new float[] { 0.525f, 0.725f, 0.775f, 0.975f });
-            input2.Add("VH", new float[] { 0.775f, 0.975f, 1.025f, 1.225f });
-
-            //brake
-            input3.Add("VL", new float[] { -0.225f, -0.025f, 0.025f, 0.225f });
-            input3.Add("L", new float[] { 0.025f, 0.225f, 0.275f, 0.475f });
-            input3.Add("M", new float[] { 0.275f, 0.475f, 0.525f, 0.725f });
-            input3.Add("H", new float[] { 0.525f, 0.725f, 0.775f, 0.975f });
-            input3.Add("VH", new float[] { 0.775f, 0.975f, 1.025f, 1.225f });
-
-            //steering_wheel
-            input4.Add("VL", new float[] { -64.8f, -7.2f, 15f, 40 });
-            input4.Add("L", new float[] { 20f, 35f, 65, 80 });
-            input4.Add("M", new float[] { 65, 85f, 105f, 125 });
-            input4.Add("H", new float[] { 100f, 115f, 145f, 160 });
-            input4.Add("VH", new float[] { 140f, 165f, 187f, 245 });
-
-            //throttle_variation
-            input5.Add("L", new float[] { -14.4f, -1.6f, 5f, 15 });
-            input5.Add("M", new float[] { 8f, 18.4f, 21.6f, 32 });
-            input5.Add("H", new float[] { 25f, 35f, 41.6f, 54.4f });
-
-            //gear
-            output1.Add("VL", new float[] { 1, 9f, 13.2f, 14 });
-            output1.Add("L", new float[] { 14f, 14.8f, 21.2f, 22 });
-            output1.Add("M", new float[] { 22f, 22.8f, 37.2f, 38 });
-            output1.Add("H", new float[] { 38f, 38.8f, 45.2f, 46 });
-            output1.Add("VH", new float[] { 46f, 46.8f, 50.8f, 59.2f });
-            #endregion
-
-
             #endregion
 
             #region Rules
@@ -550,24 +507,6 @@ namespace fuzzy_transmission
 
         private void calculateOutput() {
             
-            #region Old
-            foreach(string i  in input1.Keys) {
-                fuzzy_input1_output[i] = applyInputToTrapezoid(trackBar1.Value, input1[i]);
-            }
-            foreach(string i in input2.Keys) {
-                fuzzy_input2_output[i] = applyInputToTrapezoid(trackBar2.Value, input1[i]);
-            }
-            foreach(string i in input3.Keys) {
-                fuzzy_input3_output[i] = applyInputToTrapezoid(trackBar3.Value, input1[i]);
-            }
-            foreach(string i in input4.Keys) {
-                fuzzy_input4_output[i] = applyInputToTrapezoid(trackBar4.Value, input1[i]);
-            }
-            foreach(string i in input5.Keys) {
-                fuzzy_input5_output[i] = applyInputToTrapezoid(trackBar5.Value, input1[i]);
-            }
-            #endregion
-
             FuzzyPertinenceFunction currentPF;
             currentPF = listInputPFs[0];
             calculateMFoutput(currentPF, trackBar1.Value);
@@ -589,24 +528,6 @@ namespace fuzzy_transmission
 
         private void calculateOutputDirect(float speed, float throttlePos, float breakPos, float steeringWheelAngle, float throttleVariation) {
             
-            #region Old
-            foreach(string i in input1.Keys) {
-                fuzzy_input1_output[i] = applyInputToTrapezoid(speed, input1[i]);
-            }
-            foreach(string i in input2.Keys) {
-                fuzzy_input2_output[i] = applyInputToTrapezoid(throttlePos, input1[i]);
-            }
-            foreach(string i in input3.Keys) {
-                fuzzy_input3_output[i] = applyInputToTrapezoid(breakPos, input1[i]);
-            }
-            foreach(string i in input4.Keys) {
-                fuzzy_input4_output[i] = applyInputToTrapezoid(steeringWheelAngle, input1[i]);
-            }
-            foreach(string i in input5.Keys) {
-                fuzzy_input5_output[i] = applyInputToTrapezoid(throttleVariation, input1[i]);
-            }
-            #endregion
-
             FuzzyPertinenceFunction currentPF;
             currentPF = listInputPFs[0];
             calculateMFoutput(currentPF, speed);
@@ -764,37 +685,6 @@ namespace fuzzy_transmission
             return numerator / denominator;
         }
 
-        /*
-        private void openAssettoButton_Click(object sender, EventArgs e)
-        {
-            if(p == null) {
-                p = Process.GetProcessesByName("notepad").FirstOrDefault();
-            }
-
-            if(p != null) {
-                IntPtr h = p.MainWindowHandle;
-                SetForegroundWindow(h);
-                SendKeys.SendWait("k");
-            }
-            else {
-                DialogResult messageBoxdialogResult = MessageBox.Show("Couldn't find specified program, would you like to try to start it?", "", MessageBoxButtons.YesNo);
-                if(messageBoxdialogResult == DialogResult.Yes) {
-                    p = new Process();
-
-                    OpenFileDialog fileDialog = new OpenFileDialog();
-                    DialogResult openFileDialogResult = fileDialog.ShowDialog();
-
-                    if(openFileDialogResult == DialogResult.OK) {
-                        p.StartInfo.FileName = fileDialog.FileName;
-                        p.Start();
-                    }
-                }
-            }
-
-        }
-        */
-        
-
         private void ac_StaticInfoUpdated(object sender, StaticInfoEventArgs e)
         {
             // Print out some data from StaticInfo
@@ -833,8 +723,6 @@ namespace fuzzy_transmission
             steering_wheel_pos = e.Physics.SteerAngle*100f;
             gear = e.Physics.Gear;
         }
-
-
 
         #region Trackbars events
         public void setTrackbarValue(object sender, System.EventArgs e)
@@ -884,58 +772,5 @@ namespace fuzzy_transmission
         }
         #endregion
 
-
-        /*
-        static float defuzzCentroid(Dictionary<string,float> output, float[] mf, int numofpoints)
-        {
-            float min = output[output.Keys.ElementAt(0)];
-            float max = output[output.Keys.ElementAt(output.Keys.Count-1)];
-            float step = (max - min) / (numofpoints - 1);
-            float total_mf = 0;
-            float sum = 0;
-            int i;
-
-            for(i = 0; i < numofpoints; i++) {
-                total_mf += mf[i];
-                sum += mf[i] * (min + step * i);
-            }
-            if(total_mf == 0) {
-                Console.Out.WriteLine("Total area is zero in defuzzCentroid() for output %d.\n", m + 1);
-                Console.Out.WriteLine("Average of the range of this output variable is used as the output value.\n\n");
-                return ((fis->output[m]->bound[0] + fis->output[m]->bound[1]) / 2);
-            }
-            return (sum / total_mf);
-        }
-        */
-
-        /*
-        public double Defuzzify()
-        {
-            double numerator = 0;
-            double denominator = 0;
-
-            // Reset values
-            foreach(MembershipFunction membershipFunction in this.GetConsequent().MembershipFunctionCollection) {
-                membershipFunction.Value = 0;
-            }
-
-            foreach(FuzzyRule fuzzyRule in this.fuzzyRuleCollection) {
-                fuzzyRule.Value = Parse(fuzzyRule.Conditions());
-
-                string[] tokens = fuzzyRule.Text.Split();
-                MembershipFunction membershipFunction = this.GetConsequent().MembershipFunctionCollection.Find(tokens[tokens.Length - 1]);
-
-                if(fuzzyRule.Value > membershipFunction.Value)
-                    membershipFunction.Value = fuzzyRule.Value;
-            }
-
-            foreach(MembershipFunction membershipFunction in this.GetConsequent().MembershipFunctionCollection) {
-                numerator += membershipFunction.Centorid() * membershipFunction.Area();
-                denominator += membershipFunction.Area();
-            }
-
-            return numerator / denominator;
-        }
-        */
     }
 }
