@@ -1,0 +1,10 @@
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\bin\Debug\fuzzy_transmission.exe.config
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\bin\Debug\fuzzy_transmission.exe
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\bin\Debug\fuzzy_transmission.pdb
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\obj\Debug\fuzzy_transmission.Form1.resources
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\obj\Debug\fuzzy_transmission.Properties.Resources.resources
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\obj\Debug\fuzzy_transmission.csproj.GenerateResource.Cache
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\obj\Debug\fuzzy_transmission.csproj.CoreCompileInputs.cache
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\obj\Debug\fuzzy_transmission.exe
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\obj\Debug\fuzzy_transmission.pdb
+C:\Users\lucia\Desktop\fuzztransmission\fuzzy_transmission\fuzzy_transmission\bin\Debug\AssettoCorsaSharedMemory.dll
