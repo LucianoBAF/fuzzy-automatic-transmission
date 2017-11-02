@@ -32,7 +32,6 @@ namespace fuzzy_transmission
 
         Process p = null;
 
-        Button connectAssettoButton = new Button();
         Button manualControlButton = new Button();
 
         Label label_trackbar1 = new Label();
@@ -49,7 +48,9 @@ namespace fuzzy_transmission
         TrackBar trackBar5 = new TrackBar();
 
         Label labelOutput = new Label();
-        
+
+        ToolTip manualControlButtonTooltip = new ToolTip();
+
 
         List<float[]> rules = new List<float[]>();
 
@@ -372,36 +373,32 @@ namespace fuzzy_transmission
             rules.Add(new float[] { 1, 0, 4, -1, 0, 2, 1 });
             rules.Add(new float[] { 0, 0, 4, -1, 0, 1, 1 });
             #endregion
-
-            ac = new AssettoCorsa();
-
-            timer.Interval = 100;
-            timer.Tick += new EventHandler(setTrackbarValue);
-            timer.Start();
         }
 
         private void initializeFormAndObjects()
         {
             InitializeComponent();
 
+            //
+            // Assetto Corsa process and timer
+            //
+            ac = new AssettoCorsa();
+
+            timer.Interval = 100;
+            timer.Tick += new EventHandler(setTrackbarValue);
+            timer.Stop(); //start in manual control
+            //timer.Start();
+
+
             // 
             // Buttons
             // 
-            new ToolTip().SetToolTip(connectAssettoButton, "Connect to Assetto Corsa race");
-            connectAssettoButton.Location = new Point(locationX, locationY);
-            connectAssettoButton.Click += new EventHandler(this.initializeAssettoButtonClicked);
-            connectAssettoButton.Size = new System.Drawing.Size(64, 64);
-            connectAssettoButton.BackgroundImage = fuzzy_transmission.Properties.Resources.assetto_icon;
-            connectAssettoButton.BackgroundImageLayout = ImageLayout.Stretch;
-
-            new ToolTip().SetToolTip(manualControlButton, "Manual control inputs");
+            manualControlButtonTooltip.SetToolTip(manualControlButton, "Click to connect to Assetto Corsa");
             manualControlButton.Location = new Point(locationX + 70, locationY);
-            manualControlButton.Click += new EventHandler(this.initializeAssettoButtonClicked);
+            manualControlButton.Click += new EventHandler(this.manualControlButtonClicked);
             manualControlButton.Size = new System.Drawing.Size(64, 64);
-            manualControlButton.BackgroundImage = fuzzy_transmission.Properties.Resources.assetto_icon;
+            manualControlButton.BackgroundImage = fuzzy_transmission.Properties.Resources.manual_input;
             manualControlButton.BackgroundImageLayout = ImageLayout.Stretch;
-            
-
 
             //
             //Trackbars
@@ -424,7 +421,11 @@ namespace fuzzy_transmission
             trackBar4.SetRange(0, 180);
             trackBar5.SetRange(0, 40);
 
-
+            trackBar1.ValueChanged += new System.EventHandler(this.label_trackbar1_TextChanged);
+            trackBar2.ValueChanged += new System.EventHandler(this.label_trackbar2_TextChanged);
+            trackBar3.ValueChanged += new System.EventHandler(this.label_trackbar3_TextChanged);
+            trackBar4.ValueChanged += new System.EventHandler(this.label_trackbar4_TextChanged);
+            trackBar5.ValueChanged += new System.EventHandler(this.label_trackbar5_TextChanged);
 
             //
             //Labels
@@ -440,14 +441,6 @@ namespace fuzzy_transmission
             label_trackbar3.Text = "Brake";
             label_trackbar4.Text = "Steering Wheel";
             label_trackbar5.Text = "Throttle variation";
-
-            /*
-            trackBar1.ValueChanged += new System.EventHandler(this.label_trackbar1_TextChanged);
-            trackBar2.ValueChanged += new System.EventHandler(this.label_trackbar2_TextChanged);
-            trackBar3.ValueChanged += new System.EventHandler(this.label_trackbar3_TextChanged);
-            trackBar4.ValueChanged += new System.EventHandler(this.label_trackbar4_TextChanged);
-            trackBar5.ValueChanged += new System.EventHandler(this.label_trackbar5_TextChanged);
-            */
 
             label_trackbar1.Width = 300;
             label_trackbar2.Width = 300;
@@ -472,14 +465,56 @@ namespace fuzzy_transmission
             this.Controls.Add(label_trackbar3);
             this.Controls.Add(label_trackbar4);
             this.Controls.Add(label_trackbar5);
-            this.Controls.Add(connectAssettoButton);
             this.Controls.Add(manualControlButton);
             this.Controls.Add(labelOutput);
 
             this.MaximumSize = this.MinimumSize = this.Size;
         }
 
-        private void initializeAssettoButtonClicked(object sender, EventArgs e)
+        private void manualControlButtonClicked(object sender, EventArgs e)
+        {
+            if(timer.Enabled) {
+                //Switch to manual control
+                timer.Stop();
+                trackBar1.ValueChanged += new System.EventHandler(this.label_trackbar1_TextChanged);
+                trackBar2.ValueChanged += new System.EventHandler(this.label_trackbar2_TextChanged);
+                trackBar3.ValueChanged += new System.EventHandler(this.label_trackbar3_TextChanged);
+                trackBar4.ValueChanged += new System.EventHandler(this.label_trackbar4_TextChanged);
+                trackBar5.ValueChanged += new System.EventHandler(this.label_trackbar5_TextChanged);
+
+                trackBar1.Enabled = true;
+                trackBar2.Enabled = true;
+                trackBar3.Enabled = true;
+                trackBar4.Enabled = true;
+                trackBar5.Enabled = true;
+
+                manualControlButtonTooltip.SetToolTip(manualControlButton, "Click to connect to Assetto Corsa");
+                manualControlButton.BackgroundImage = fuzzy_transmission.Properties.Resources.manual_input;
+
+            }
+            else {
+                //Switch to assetto corsa connection
+                timer.Start();
+                trackBar1.ValueChanged -= new System.EventHandler(this.label_trackbar1_TextChanged);
+                trackBar2.ValueChanged -= new System.EventHandler(this.label_trackbar2_TextChanged);
+                trackBar3.ValueChanged -= new System.EventHandler(this.label_trackbar3_TextChanged);
+                trackBar4.ValueChanged -= new System.EventHandler(this.label_trackbar4_TextChanged);
+                trackBar5.ValueChanged -= new System.EventHandler(this.label_trackbar5_TextChanged);
+
+                trackBar1.Enabled = false;
+                trackBar2.Enabled = false;
+                trackBar3.Enabled = false;
+                trackBar4.Enabled = false;
+                trackBar5.Enabled = false;
+
+                manualControlButtonTooltip.SetToolTip(manualControlButton, "Click to change to manual control inputs");
+                manualControlButton.BackgroundImage = fuzzy_transmission.Properties.Resources.assetto_icon;
+
+                initializeAssettoConnection();
+            }
+        }
+
+        private void initializeAssettoConnection()
         {
             p = Process.GetProcessesByName("acs").FirstOrDefault();
             //SetForegroundWindow(p.MainWindowHandle);
@@ -512,8 +547,6 @@ namespace fuzzy_transmission
                     MessageBox.Show("Assetto Corsa connection failed");
             }
         }
-
-
 
         private void calculateOutput() {
             
